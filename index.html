@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Загрузка...</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Courier+Prime:wght@700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --red: #ff2020;
+    --yellow: #ffcc00;
+    --dim: #1a1a1a;
+  }
+
+  body {
+    background: #000;
+    color: #ccc;
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  /* CRT эффект */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  @keyframes flicker {
+    0%,100%{opacity:1} 91%{opacity:1} 92%{opacity:.3} 93%{opacity:1} 97%{opacity:.7} 98%{opacity:1}
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--red)} 50%{box-shadow:0 0 30px var(--red), 0 0 60px var(--red)} }
+  @keyframes scanline {
+    0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)}
+  }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  @keyframes glitch1 {
+    0%,100%{clip-path:inset(50% 0 30% 0);transform:translate(-3px,0)}
+    50%{clip-path:inset(10% 0 80% 0);transform:translate(3px,0)}
+  }
+  @keyframes glitch2 {
+    0%,100%{clip-path:inset(70% 0 5% 0);transform:translate(3px,0)}
+    50%{clip-path:inset(30% 0 50% 0);transform:translate(-3px,0)}
+  }
+  @keyframes shake {
+    0%,100%{transform:translate(0)} 20%{transform:translate(-3px,2px)}
+    40%{transform:translate(3px,-2px)} 60%{transform:translate(-2px,3px)}
+    80%{transform:translate(2px,-1px)}
+  }
+  @keyframes countdown-pulse {
+    0%,100%{color:var(--red);text-shadow:0 0 10px var(--red)}
+    50%{color:#ff6060;text-shadow:0 0 30px var(--red)}
+  }
+
+  .scanline {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(transparent, rgba(255,32,32,0.04), transparent);
+    animation: scanline 4s linear infinite;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ЭТАП 0 — пустой экран (мигает) */
+  #stage-0 {
+    position: fixed; inset: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #333;
+    letter-spacing: 3px;
+    animation: flicker 5s infinite;
+  }
+
+  /* ЭТАП 1 — главный экран */
+  #stage-1 {
+    display: none;
+    position: fixed; inset: 0;
+    padding: 30px 20px;
+    animation: flicker 6s infinite;
+    overflow-y: auto;
+  }
+
+  .top-bar {
+    background: var(--red);
+    color: #000;
+    text-align: center;
+    padding: 9px;
+    font-size: 12px;
+    letter-spacing: 4px;
+    font-weight: 700;
+    font-family: 'Courier Prime', monospace;
+    animation: pulse 1.2s infinite;
+    margin-bottom: 25px;
+  }
+
+  .main-title {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+  }
+
+  .main-title h1 {
+    font-family: 'Courier Prime', monospace;
+    font-size: clamp(22px, 4vw, 36px);
+    color: var(--red);
+    letter-spacing: 5px;
+    text-shadow: 0 0 15px var(--red);
+    position: relative;
+  }
+
+  .main-title h1::before {
+    content: attr(data-t);
+    position: absolute; inset: 0;
+    color: #ff4444;
+    animation: glitch1 2.5s infinite;
+  }
+  .main-title h1::after {
+    content: attr(data-t);
+    position: absolute; inset: 0;
+    color: #cc0000;
+    animation: glitch2 2.5s 0.3s infinite;
+  }
+
+  .main-title p {
+    color: var(--yellow);
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-top: 8px;
+    animation: blink 1.2s infinite;
+  }
+
+  /* ТЕРМИНАЛ */
+  .terminal {
+    border: 1px solid #2a2a2a;
+    background: #050505;
+    margin-bottom: 20px;
+  }
+
+  .term-header {
+    background: #111;
+    padding: 7px 14px;
+    border-bottom: 1px solid #1e1e1e;
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 2px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .dot { width:10px;height:10px;border-radius:50%; }
+  .dr{background:#ff5f56}.dy{background:#ffbd2e}.dg{background:#27c93f}
+
+  .term-body {
+    padding: 18px;
+    font-size: 12px;
+    line-height: 2;
+  }
+
+  .t-line { display: flex; gap: 8px; }
+  .t-prompt { color: #333; }
+  .t-cmd { color: #888; }
+  .t-out { color: #555; padding-left: 18px; }
+  .t-warn { color: var(--yellow); padding-left: 18px; }
+  .t-err { color: var(--red); padding-left: 18px; }
+  .t-data { color: #aaa; padding-left: 18px; }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 7px; height: 13px;
+    background: var(--red);
+    animation: blink 0.8s infinite;
+    vertical-align: middle;
+  }
+
+  /* ДАННЫЕ УСТРОЙСТВА */
+  .device-box {
+    border: 1px solid var(--red);
+    padding: 18px;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+    background: rgba(255,32,32,0.03);
+  }
+
+  .device-box .label {
+    font-size: 10px;
+    color: #444;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+
+  .device-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #111;
+    font-size: 12px;
+  }
+  .device-row:last-child { border-bottom: none; }
+  .device-key { color: #555; }
+  .device-val { color: #ddd; }
+  .device-val.red { color: var(--red); }
+  .device-val.yellow { color: var(--yellow); }
+
+  /* ТАЙМЕР */
+  .timer-section {
+    text-align: center;
+    padding: 25px;
+    border: 2px solid var(--red);
+    margin-bottom: 20px;
+    background: rgba(255,32,32,0.04);
+    animation: pulse 1s infinite;
+  }
+
+  .timer-label {
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+  }
+
+  .timer-display {
+    font-family: 'Courier Prime', monospace;
+    font-size: clamp(42px, 10vw, 72px);
+    font-weight: 700;
+    animation: countdown-pulse 0.8s infinite;
+    letter-spacing: 6px;
+  }
+
+  .timer-sub {
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 2px;
+    margin-top: 8px;
+  }
+
+  /* ПРОГРЕСС СКАНИРОВАНИЯ */
+  .scan-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #0d0d0d;
+  }
+  .scan-name { color: #555; letter-spacing: 1px; }
+  .scan-status { font-size: 11px; letter-spacing: 2px; }
+  .scan-status.done { color: var(--red); }
+  .scan-status.running { color: var(--yellow); animation: blink 0.6s infinite; }
+  .scan-status.pending { color: #333; }
+
+  /* КНОПКИ */
+  .btn-section { margin-bottom: 20px; }
+  .btn-label { font-size: 10px; color: #333; letter-spacing: 3px; margin-bottom: 12px; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    margin-bottom: 10px;
+    background: transparent;
+    border: 1px solid;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+
+  .btn-r { border-color: var(--red); color: var(--red); }
+  .btn-r:hover { background: rgba(255,32,32,0.1); animation: shake 0.3s; }
+
+  .btn-y { border-color: #444; color: #555; }
+  .btn-y:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  .footer-text {
+    font-size: 10px;
+    color: #222;
+    letter-spacing: 2px;
+    text-align: center;
+    line-height: 2;
+    margin-top: 10px;
+  }
+
+  /* ЭТАП 2 — белая вспышка камеры */
+  #stage-flash {
+    display: none;
+    position: fixed; inset: 0;
+    background: #fff;
+    z-index: 99999;
+  }
+
+  /* ЭТАП 3 — финальный экран "передача данных" */
+  #stage-2 {
+    display: none;
+    position: fixed; inset: 0;
+    background: #000;
+    padding: 30px 20px;
+    animation: flicker 4s infinite;
+    overflow-y: auto;
+  }
+
+  .upload-title {
+    font-family: 'Courier Prime', monospace;
+    font-size: clamp(18px, 4vw, 28px);
+    color: var(--red);
+    text-align: center;
+    letter-spacing: 4px;
+    text-shadow: 0 0 20px var(--red);
+    margin-bottom: 5px;
+    animation: countdown-pulse 0.6s infinite;
+  }
+  .upload-sub {
+    text-align: center;
+    color: #333;
+    font-size: 11px;
+    letter-spacing: 3px;
+    margin-bottom: 30px;
+  }
+
+  .upload-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #0d0d0d;
+    font-size: 12px;
+    opacity: 0;
+    animation: fadeIn 0.4s forwards;
+  }
+
+  .upload-name { color: #555; }
+  .upload-bar {
+    width: 120px;
+    height: 3px;
+    background: #111;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-fill {
+    height: 100%;
+    background: var(--red);
+    width: 0%;
+    transition: width linear;
+    box-shadow: 0 0 6px var(--red);
+  }
+  .upload-pct { color: var(--red); font-size: 11px; min-width: 40px; text-align: right; }
+
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- ЭТАП 0: первые 1.5 сек -->
+<div id="stage-0">инициализация подключения...</div>
+
+<!-- ЭТАП 1: главный экран -->
+<div id="stage-1">
+
+  <div class="top-bar">⚠ НЕСАНКЦИОНИРОВАННЫЙ ДОСТУП ОБНАРУЖЕН ⚠</div>
+
+  <div class="main-title">
+    <h1 data-t="УСТРОЙСТВО СКОМПРОМЕТИРОВАНО">УСТРОЙСТВО СКОМПРОМЕТИРОВАНО</h1>
+    <p>[ ВЫПОЛНЯЕТСЯ СБОР ДАННЫХ ]</p>
+  </div>
+
+  <!-- Терминал -->
+  <div class="terminal">
+    <div class="term-header">
+      <div class="dot dr"></div><div class="dot dy"></div><div class="dot dg"></div>
+      <span style="margin-left:8px">intrusion_detect.sh</span>
+    </div>
+    <div class="term-body" id="termBody">
+      <!-- Строки добавляются JS -->
+    </div>
+  </div>
+
+  <!-- Данные устройства -->
+  <div class="device-box">
+    <div class="label">// ИДЕНТИФИЦИРОВАННЫЕ ДАННЫЕ УСТРОЙСТВА</div>
+    <div class="device-row">
+      <span class="device-key">БРАУЗЕР</span>
+      <span class="device-val red" id="d-browser">—</span>
+    </div>
+    <div class="device-row">
+      <span class="device-key">ПЛАТФОРМА</span>
+      <span class="device-val yellow" id="d-os">—</span>
+    </div>
+    <div class="device-row">
+      <span class="device-key">ЯЗЫК</span>
+      <span class="device-val" id="d-lang">—</span>
+    </div>
+    <div class="device-row">
+      <span class="device-key">РАЗРЕШЕНИЕ</span>
+      <span class="device-val" id="d-screen">—</span>
+    </div>
+    <div class="device-row">
+      <span class="device-key">СТАТУС</span>
+      <span class="device-val red">ПЕРЕДАЁТСЯ ▶</span>
+    </div>
+  </div>
+
+  <!-- Таймер -->
+  <div class="timer-section">
+    <div class="timer-label">ДО ПОЛНОЙ БЛОКИРОВКИ УСТРОЙСТВА</div>
+    <div class="timer-display" id="timerDisplay">04:59</div>
+    <div class="timer-sub">не отключайтесь от сети</div>
+  </div>
+
+  <!-- Сканирование -->
+  <div class="terminal" style="margin-bottom:20px">
+    <div class="term-header">
+      <div class="dot dr"></div><div class="dot dy"></div><div class="dot dg"></div>
+      <span style="margin-left:8px">deep_scan.sh — активно</span>
+    </div>
+    <div class="term-body">
+      <div class="scan-row"><span class="scan-name">ИСТОРИЯ БРАУЗЕРА</span><span class="scan-status done" id="sc1">ПОЛУЧЕНО ✓</span></div>
+      <div class="scan-row"><span class="scan-name">COOKIE / СЕССИИ</span><span class="scan-status done" id="sc2">ПОЛУЧЕНО ✓</span></div>
+      <div class="scan-row"><span class="scan-name">СОХРАНЁННЫЕ ПАРОЛИ</span><span class="scan-status running" id="sc3">СКАНИРОВАНИЕ...</span></div>
+      <div class="scan-row"><span class="scan-name">БАНКОВСКИЕ ДАННЫЕ</span><span class="scan-status pending" id="sc4">ОЖИДАНИЕ</span></div>
+      <div class="scan-row"><span class="scan-name">ГЕОЛОКАЦИЯ</span><span class="scan-status pending" id="sc5">ОЖИДАНИЕ</span></div>
+    </div>
+  </div>
+
+  <!-- Кнопки -->
+  <div class="btn-section">
+    <div class="btn-label">// выберите действие:</div>
+    <button class="btn btn-r" onclick="btnClick(this)">⚠ ОСТАНОВИТЬ СКАНИРОВАНИЕ</button>
+    <button class="btn btn-r" onclick="btnClick(this)">🔒 ЗАЩИТИТЬ УСТРОЙСТВО</button>
+    <button class="btn btn-y" onclick="btnClick(this)">✕ ЗАКРЫТЬ СТРАНИЦУ</button>
+    <button class="btn btn-y" onclick="btnClick(this)">→ ПЕРЕЙТИ В БЕЗОПАСНЫЙ РЕЖИМ</button>
+  </div>
+
+  <div class="footer-text">
+    SYSTEM INTRUSION MONITOR v7.1.4 &nbsp;|&nbsp; PID: 00█████<br>
+    Все действия фиксируются и передаются
+  </div>
+</div>
+
+<!-- ВСПЫШКА КАМЕРЫ -->
+<div id="stage-flash"></div>
+
+<!-- ЭТАП 2: передача данных -->
+<div id="stage-2">
+  <div style="margin-bottom:30px">
+    <div class="top-bar" style="margin-bottom:0">⚠ ПЕРЕДАЧА ДАННЫХ ⚠</div>
+  </div>
+
+  <div class="upload-title">ДАННЫЕ ОТПРАВЛЯЮТСЯ</div>
+  <div class="upload-sub">не закрывайте страницу</div>
+
+  <div id="uploadList"></div>
+</div>
+
+<script>
+// ─── ДАННЫЕ УСТРОЙСТВА ───────────────────────────────
+function getBrowser() {
+  const ua = navigator.userAgent;
+  if (ua.includes('YaBrowser')) return 'Яндекс Браузер';
+  if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Google Chrome';
+  if (ua.includes('Firefox')) return 'Mozilla Firefox';
+  if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+  if (ua.includes('Edg')) return 'Microsoft Edge';
+  if (ua.includes('Opera') || ua.includes('OPR')) return 'Opera';
+  return 'Неизвестный браузер';
+}
+
+function getOS() {
+  const ua = navigator.userAgent;
+  const pl = navigator.platform || '';
+  if (/Android/i.test(ua)) return 'Android';
+  if (/iPhone|iPad/i.test(ua)) return 'iOS';
+  if (/Win/.test(pl)) return 'Windows';
+  if (/Mac/.test(pl)) return 'macOS';
+  if (/Linux/.test(pl)) return 'Linux';
+  return 'Неизвестно';
+}
+
+// ─── ЗВУК ТРЕВОГИ (Web Audio API) ────────────────────
+let audioCtx;
+function startAlarm() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let phase = 0;
+    function beep() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = phase % 2 === 0 ? 880 : 660;
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.35);
+      phase++;
+      if (phase < 60) setTimeout(beep, 500);
+    }
+    beep();
+  } catch(e) {}
+}
+
+// ─── ТЕРМИНАЛ: построчно ─────────────────────────────
+const lines = [
+  {type:'line', prompt:'$', cmd:' connect --target host'},
+  {type:'out', text:'Подключение установлено...'},
+  {type:'line', prompt:'$', cmd:' identify --device'},
+  {type:'warn', text:'⚠ Устройство обнаружено'},
+  {type:'line', prompt:'$', cmd:' run exploit --silent'},
+  {type:'err', text:'✗ Антивирус обойдён'},
+  {type:'err', text:'✗ Брандмауэр отключён'},
+  {type:'line', prompt:'$', cmd:' start_extraction --all'},
+  {type:'warn', text:'⚠ Сбор данных начат...'},
+];
+
+function addTermLine(l, cb) {
+  const el = document.createElement('div');
+  if (l.type === 'line') {
+    el.className = 't-line';
+    el.innerHTML = `<span class="t-prompt">${l.prompt}</span><span class="t-cmd">${l.cmd}</span>`;
+  } else {
+    el.className = l.type === 'out' ? 't-out' : l.type === 'warn' ? 't-warn' : 't-err';
+    el.textContent = l.text;
+  }
+  el.style.opacity = '0';
+  document.getElementById('termBody').appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.3s';
+    el.style.opacity = '1';
+    if (cb) cb();
+  }, 50);
+}
+
+// ─── ТАЙМЕР ───────────────────────────────────────────
+let seconds = 299;
+let timerInterval;
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    seconds--;
+    if (seconds < 0) seconds = 0;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    document.getElementById('timerDisplay').textContent =
+      String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }, 1000);
+}
+
+// ─── КНОПКИ ───────────────────────────────────────────
+function btnClick(btn) {
+  btn.textContent = '⏳ ВЫПОЛНЯЕТСЯ...';
+  btn.disabled = true;
+  btn.style.opacity = '0.4';
+  setTimeout(() => {
+    btn.textContent = '✗ ОТКАЗАНО В ДОСТУПЕ';
+    btn.style.color = '#333';
+    btn.style.borderColor = '#222';
+  }, 1500);
+}
+
+// ─── СКАНИРОВАНИЕ: этапы ─────────────────────────────
+function runScanStages() {
+  setTimeout(() => {
+    document.getElementById('sc3').textContent = 'ПОЛУЧЕНО ✓';
+    document.getElementById('sc3').className = 'scan-status done';
+    document.getElementById('sc4').textContent = 'СКАНИРОВАНИЕ...';
+    document.getElementById('sc4').className = 'scan-status running';
+  }, 8000);
+
+  setTimeout(() => {
+    document.getElementById('sc4').textContent = 'ПОЛУЧЕНО ✓';
+    document.getElementById('sc4').className = 'scan-status done';
+    document.getElementById('sc5').textContent = 'СКАНИРОВАНИЕ...';
+    document.getElementById('sc5').className = 'scan-status running';
+  }, 16000);
+
+  setTimeout(() => {
+    document.getElementById('sc5').textContent = 'ПОЛУЧЕНО ✓';
+    document.getElementById('sc5').className = 'scan-status done';
+  }, 23000);
+}
+
+// ─── ВСПЫШКА + ЭТАП 2 ────────────────────────────────
+function triggerFlashAndUpload() {
+  clearInterval(timerInterval);
+
+  // Вспышка
+  const flash = document.getElementById('stage-flash');
+  flash.style.display = 'block';
+  setTimeout(() => { flash.style.display = 'none'; }, 400);
+
+  // Переключаем экран
+  setTimeout(() => {
+    document.getElementById('stage-1').style.display = 'none';
+    document.getElementById('stage-2').style.display = 'block';
+    startUploadAnimation();
+  }, 500);
+}
+
+// ─── АНИМАЦИЯ ЗАГРУЗКИ ДАННЫХ ─────────────────────────
+const uploadItems = [
+  'История браузера',
+  'Файлы cookie',
+  'Сохранённые пароли',
+  'Фото устройства',
+  'Контакты',
+  'Переписка',
+  'Геолокация',
+  'Банковские данные',
+];
+
+function startUploadAnimation() {
+  const list = document.getElementById('uploadList');
+  uploadItems.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'upload-item';
+    row.style.animationDelay = (i * 0.4) + 's';
+    row.innerHTML = `
+      <span class="upload-name">${name}</span>
+      <div class="upload-bar"><div class="upload-fill" id="uf${i}"></div></div>
+      <span class="upload-pct" id="up${i}">0%</span>
+    `;
+    list.appendChild(row);
+
+    // Анимируем прогресс с задержкой
+    setTimeout(() => {
+      animateBar(i);
+    }, i * 1800 + 600);
+  });
+}
+
+function animateBar(i) {
+  const fill = document.getElementById('uf' + i);
+  const pct = document.getElementById('up' + i);
+  if (!fill || !pct) return;
+  let w = 0;
+  const speed = Math.random() * 30 + 20;
+  const iv = setInterval(() => {
+    w += Math.random() * 4 + 1;
+    if (w >= 100) {
+      w = 100;
+      clearInterval(iv);
+      pct.style.color = '#ff6060';
+    }
+    fill.style.width = w + '%';
+    pct.textContent = Math.floor(w) + '%';
+  }, speed);
+}
+
+// ─── ЗАПУСК ───────────────────────────────────────────
+window.addEventListener('load', () => {
+  // Заполняем данные устройства
+  document.getElementById('d-browser').textContent = getBrowser();
+  document.getElementById('d-os').textContent = getOS();
+  document.getElementById('d-lang').textContent = navigator.language || '—';
+  document.getElementById('d-screen').textContent = screen.width + 'x' + screen.height;
+
+  // Этап 0 → 1
+  setTimeout(() => {
+    document.getElementById('stage-0').style.display = 'none';
+    document.getElementById('stage-1').style.display = 'block';
+    startAlarm();
+    startTimer();
+    runScanStages();
+
+    // Построчно добавляем терминал
+    let delay = 0;
+    lines.forEach((l, i) => {
+      setTimeout(() => addTermLine(l), delay);
+      delay += i % 2 === 0 ? 600 : 400;
+    });
+
+    // Через 30 сек — вспышка и финал
+    setTimeout(triggerFlashAndUpload, 30000);
+  }, 1500);
+});
+</script>
+</body>
+</html>
